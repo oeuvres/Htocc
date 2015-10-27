@@ -1,6 +1,7 @@
 <?php
 /**
 LGPL http://www.gnu.org/licenses/lgpl.html
+© 2010 frederic.glorieux@fictif.org et École nationale des chartes
 © 2012–2013 frederic.glorieux@fictif.org
 © 2013–2015 frederic.glorieux@fictif.org et LABEX OBVIL
 
