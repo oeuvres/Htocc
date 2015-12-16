@@ -41,8 +41,8 @@ class Sqlite {
    * @param string $offsets A paack of integer in Sqlite format http://www.sqlite.org/fts3.html#section_4_1 
    * @return null 
    */
-  public function conc($text, $offsets, $field=null, $href='') {
-    $width = 50; // kwic width
+  public function conc($text, $offsets, $field=null, $chars=75) {
+    $snip = array();
     if (!$field) $field = 0;
     $this->_text = $text; // for efficiency, set text at class level
     $offsets = explode(' ',$offsets);
@@ -62,26 +62,9 @@ class Sqlite {
       }
       $mark++; // increment only when a <mark> is openened
       $size = $offsets[$i+2]+$offsets[$i+3]-$start;
-      $snip = $this->snip($start, $size);
-      echo "\n        " . '<div class="snip">';
-      if ($href) echo "\n        " . '<a class="snip" href="' . $href.'#mark'.$mark.'">';
-      echo '<span class="left">';
-      if (mb_strlen($snip['left']) > $width + 5) { 
-        $pos = mb_strrpos($snip['left'], " ", 0 - $width);
-        echo '<span class="exleft">' . mb_substr($snip['left'], 0, $pos) . '</span>' . mb_substr($snip['left'], $pos);
-      }
-      else echo $snip['left'];
-      echo ' </span><span class="right"><mark>'.$snip['center'].'</mark>';
-      if (mb_strlen($snip['right']) > $width + 5) { 
-        $pos = mb_strpos($snip['right']. ' ', " ", $width);
-        echo mb_substr($snip['right'], 0, $pos) . '<span class="exright">' . mb_substr($snip['right'], $pos) . '</span>';
-      }
-      else echo $snip['right'];
-      echo '</span>';
-      if ($href) echo '</a>';
-      echo '</div>';
-      $start = null;
+      $snip[] = $this->snip($start, $size, $chars);
       /* TODO limit
+      $start = null;
       $this->hitsCount++;
       if (($occBookMax && $mark >= $occBookMax)) {
         echo "\n     ".$this->msg('occbookmax', array($mark, ($basehref . $article['articleName'] . '?q=' .$qHref.'#mark1')));
@@ -89,7 +72,32 @@ class Sqlite {
       }
       if ($this->hitsCount >= $this->hitsMax) break;
       */
+      $start = null;
     }
+    return $snip;
+  }
+  function snip2div($snip, $href=null) {
+    $width = 50; // kwic width
+    echo "\n        " . '<div class="snip">';
+    if ($href) echo "\n        " . '<a class="snip" href="' . $href.'#mark'.$mark.'">';
+    echo '<span class="left">';
+    if (mb_strlen($snip['left']) > $width + 5) { 
+      $pos = mb_strrpos($snip['left'], " ", 0 - $width);
+      echo '<span class="exleft">' . mb_substr($snip['left'], 0, $pos) . '</span>' . mb_substr($snip['left'], $pos);
+    }
+    else echo $snip['left'];
+    echo ' </span><span class="right"><mark>'.$snip['center'].'</mark>';
+    if (mb_strlen($snip['right']) > $width + 5) { 
+      $pos = mb_strpos($snip['right']. ' ', " ", $width);
+      echo mb_substr($snip['right'], 0, $pos) . '<span class="exright">' . mb_substr($snip['right'], $pos) . '</span>';
+    }
+    else echo $snip['right'];
+    echo '</span>';
+    if ($href) echo '</a>';
+    echo '</div>';      
+  }
+  function snip2array() {
+    
   }
 
   /**
@@ -99,12 +107,11 @@ class Sqlite {
    * return is an array with three components : left, center, right
    * reference text is set as a class field
    */
-  public function snip($offset, $size) 
+  public function snip($offset, $size, $chars=100) 
   {
-    $width = 300; // width max in chars
     $snip = array();
-    $start = $offset-$width;
-    $length = $width;
+    $start = $offset-$chars;
+    $length = $chars;
     if($start < 0) {
       $start = 0;
       $length = $offset-1;
@@ -119,7 +126,7 @@ class Sqlite {
     }
     $snip['center'] = preg_replace('@[  \t\n\r]+@u', ' ', substr($this->_text, $offset, $size));
     $start = $offset+$size;
-    $length = $width;
+    $length = $chars;
     $len = strlen($this->_text);
     if ($start + $length - 1 > $len) $length = $len-$start;
     if($length) {
