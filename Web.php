@@ -1,15 +1,15 @@
-<?php 
+<?php
 /**
  * © 2010 frederic.glorieux@fictif.org et École nationale des chartes
  * © 2012 frederic.glorieux@fictif.org
  * © 2014 frederic.glorieux@fictif.org et LABEX OBVIL
  * LGPL http://www.gnu.org/licenses/lgpl.html
- * 
+ *
  * This program is a free software: you can redistribute it and/or modify it
- * under the terms of the GNU Lesser General Public License 
+ * under the terms of the GNU Lesser General Public License
  * http://www.gnu.org/licenses/lgpl.html
  * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
  *
  */
@@ -91,13 +91,13 @@ class Phips_Web {
     if ($path) { // return a result, no store
       $path = preg_replace('@/+@', '/', ltrim($path, '/'));
       $path = str_repeat("../", substr_count($path, '/'));
-      if (!$path) $path="./"; // with /toto, go up with ./ 
+      if (!$path) $path="./"; // with /toto, go up with ./
       return $path;
     }
     if (isset(self::$basehref)) return self::$basehref;
     $pathinfo = self::pathinfo();
     self::$basehref = str_repeat("../", substr_count($pathinfo, '/'));
-    if (!self::$basehref) self::$basehref="./"; // with /toto, go up with ./ 
+    if (!self::$basehref) self::$basehref="./"; // with /toto, go up with ./
     return self::$basehref;
   }
   /**
@@ -157,20 +157,20 @@ class Phips_Web {
     }
     // if cookie stored, load it
     else if(isset($_COOKIE[$name])) $pars = unserialize($_COOKIE[$name]);
-    // validate 
+    // validate
     if ($pattern) {
       $newPars = array();
       foreach($pars as $value) if (preg_match($pattern, $value)) $newPars[] = $value;
       $pars = $newPars;
     }
-    // default 
+    // default
     if (count($pars));
     else if (!$default);
     else if (is_array($default)) $pars = $default;
     else $pars = array($default);
     return $pars;
   }
- 
+
   /**
    * Search for a lang in an accpted list
    */
@@ -219,7 +219,7 @@ class Phips_Web {
    * query: ?A=1&A=2&A=&B=3
    * return: ?A=1&A=2&B=3
    * $keep=true : keep empty params -> ?A=1&A=2&A=&B=3
-   * $exclude=array() : exclude some parameters 
+   * $exclude=array() : exclude some parameters
    */
   public static function query($keep = false, $exclude = array(), $query = null) {
     // query given as param
@@ -264,7 +264,7 @@ class Phips_Web {
     // tests for 304
     if($force);
     else if (self::noCache());
-    // ($if_none_match && $if_none_match == $etag) || 
+    // ($if_none_match && $if_none_match == $etag) ||
     else if ( $if_modified_since == $modification) {
       header('HTTP/1.x 304 Not Modified');
       exit;
@@ -272,14 +272,14 @@ class Phips_Web {
     // header("X-Date: ". substr(gmdate('r'), 0, -5).'GMT');
     /*
     // According to google, https://developers.google.com/speed/docs/best-practices/caching
-    // exclude etag if last-Modified, and last-Modified is better 
+    // exclude etag if last-Modified, and last-Modified is better
     $etag = '"'.md5($modification).'"';
     header("ETag: $etag");
     */
     // it seems there is something to send
     header("Cache control: public"); // for FireFox over https
     header("Last-Modified: $modification");
-    // it's good to 
+    // it's good to
     if ($expires) header('Expires: ' . gmdate('D, d M Y H:i:s', time()+$expires) . ' GMT');
   }
 
@@ -336,8 +336,8 @@ class Phips_Web {
         'fr' => "Phips_Web::upload(), pas de champ $key dans le formulaire soumis.",
       ),
       'nofile' => array(
-        'en' => "Phips_Web::upload(), no file found.",
-        'fr' => "Phips_Web::upload(), pas de fichier trouvé.",
+        'en' => 'Phips_Web::upload(), no file found. Too big ? Directives in php.ini: upload_max_filesize='.ini_get('upload_max_filesize').', post_max_size='.ini_get('post_max_size'),
+        'fr' => 'Phips_Web::upload(), pas de fichier trouvé. Trop gros ? Directives php.ini: upload_max_filesize='.ini_get('upload_max_filesize').', post_max_size='.ini_get('post_max_size'),
       ),
     );
     if ($key && !isset($_FILES[$key])) throw new Exception($mess['nokey'][$lang]);
@@ -352,7 +352,7 @@ class Phips_Web {
     $file["extension"] = pathinfo($file['name'], PATHINFO_EXTENSION);
     return $file;
   }
-  
+
 }
 
 ?>
