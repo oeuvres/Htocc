@@ -37,8 +37,12 @@ class Phips_Web {
     "css"  => 'text/css; charset=UTF-8',
     "epub" => 'application/epub+zip',
     "html" => 'text/html; charset=UTF-8',
+    "iramuteq" => "text/plain; charset=UTF-8",
     "jpg"  => 'image/jpeg',
     "js"  => 'text/javascript; charset=UTF-8',
+    "md" => "text/plain; charset=UTF-8",
+    "markdown" => "text/plain; charset=UTF-8",
+    "naked" => "text/plain; charset=UTF-8",
     "png"  => 'image/png',
     "xml"  => 'text/xml',
     "xhtml" => 'text/html; charset=UTF-8',
@@ -87,6 +91,9 @@ class Phips_Web {
     self::$pathinfo = $pathinfo;
     return self::$pathinfo;
   }
+  /**
+   * Relative path to context
+   */
   public static function basehref($path=null) {
     if ($path) { // return a result, no store
       $path = preg_replace('@/+@', '/', ltrim($path, '/'));
@@ -297,6 +304,8 @@ class Phips_Web {
   }
   /**
    * Get link to un upload file, by key or first one if no key
+   * return a file record like ine $_FILES
+   * http://php.net/manual/features.file-upload.post-method.php
    */
    public static function upload($key=null) {
     // no post, return nothing
