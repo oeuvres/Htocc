@@ -4,23 +4,25 @@
  * © 2012 frederic.glorieux@fictif.org & LABEX OBVIL
  *
  * This program is a free software: you can redistribute it and/or modify it
- * under the terms of the GNU Lesser General Public License 
+ * under the terms of the GNU Lesser General Public License
  * http://www.gnu.org/licenses/lgpl.html
  * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
  *
  */
 
-/** 
+/**
  * Set of static functions useful with Sqlite datas, especially FTS3
  * Maybe used inside SQL queries with $dbo->sqliteCreateFunction()
  */
-class Sqlite {
+class Htocc_Sqlite {
   /** sqlite File  */
   private $_sqlitefile;
   /** A text to snip */
   private $_text;
+  /** Lien */
+  public $pdo;
   /**
    * Constructor with a Sqlite base and a path
    */
@@ -31,27 +33,28 @@ class Sqlite {
     $this->pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_WARNING ); // get error as classical PHP warn
     $this->pdo->exec("PRAGMA temp_store = 2;"); // store temp table in memory (efficiency)
     // matchinfo not available on centOs 5.5
+    // TODO test if matchinfo available
     // $this->pdo->sqliteCreateFunction('matchinfo2occ', 'Sqlite::matchinfo2occ', 1);
-    $this->pdo->sqliteCreateFunction('offsets2occ', 'Sqlite::offsets2occ', 1);
+    $this->pdo->sqliteCreateFunction('offsets2occ', 'Htocc_Sqlite::offsets2occ', 1);
   }
   /**
    * Sqlite FTS3
    * Output a concordance from a search row with a text field, and an offset string pack
-   * @param string $text The text from which to extract snippets 
-   * @param string $offsets A paack of integer in Sqlite format http://www.sqlite.org/fts3.html#section_4_1 
-   * @return null 
+   * @param string $text The text from which to extract snippets
+   * @param string $offsets A paack of integer in Sqlite format http://www.sqlite.org/fts3.html#section_4_1
+   * @return null
    */
   public function conc($text, $offsets, $field=null, $chars=75) {
     $snip = array();
     if (!$field) $field = 0;
     $this->_text = $text; // for efficiency, set text at class level
     $offsets = explode(' ',$offsets);
-    $mark = 0; // occurrence hilite counter 
+    $mark = 0; // occurrence hilite counter
     $start = null;
     $count = count($offsets);
     for ($i = 0; $i<$count; $i = $i+4) {
       if($offsets[$i] != $field) continue; // match in another column
-      // first index 
+      // first index
       if ($start === null) $start = $offsets[$i+2];
       // if it is a phrase query continuing on next token, go next
       if ($i+6 < $count) {
@@ -81,23 +84,23 @@ class Sqlite {
     echo "\n        " . '<div class="snip">';
     if ($href) echo "\n        " . '<a class="snip" href="' . $href.'#mark'.$mark.'">';
     echo '<span class="left">';
-    if (mb_strlen($snip['left']) > $width + 5) { 
+    if (mb_strlen($snip['left']) > $width + 5) {
       $pos = mb_strrpos($snip['left'], " ", 0 - $width);
       echo '<span class="exleft">' . mb_substr($snip['left'], 0, $pos) . '</span>' . mb_substr($snip['left'], $pos);
     }
     else echo $snip['left'];
     echo ' </span><span class="right"><mark>'.$snip['center'].'</mark>';
-    if (mb_strlen($snip['right']) > $width + 5) { 
+    if (mb_strlen($snip['right']) > $width + 5) {
       $pos = mb_strpos($snip['right']. ' ', " ", $width);
       echo mb_substr($snip['right'], 0, $pos) . '<span class="exright">' . mb_substr($snip['right'], $pos) . '</span>';
     }
     else echo $snip['right'];
     echo '</span>';
     if ($href) echo '</a>';
-    echo '</div>';      
+    echo '</div>';
   }
   function snip2array() {
-    
+
   }
 
   /**
@@ -107,7 +110,7 @@ class Sqlite {
    * return is an array with three components : left, center, right
    * reference text is set as a class field
    */
-  public function snip($offset, $size, $chars=100) 
+  public function snip($offset, $size, $chars=100)
   {
     $snip = array();
     $start = $offset-$chars;
@@ -118,7 +121,7 @@ class Sqlite {
     }
     if ($length) {
       $left = substr($this->_text, $start, $length);
-      // cut at last line break 
+      // cut at last line break
       if ($pos = strrpos($left, "\n")) $left = substr($left, $pos);
       // if no cut at a space
       else if ($pos = strpos($left, ' ')) $left = '… '.substr($left, $pos+1);
@@ -131,7 +134,7 @@ class Sqlite {
     if ($start + $length - 1 > $len) $length = $len-$start;
     if($length) {
       $right = substr($this->_text, $start, $length);
-      // cut at first line break 
+      // cut at first line break
       if ($pos = strpos($right, "\n")) $right = substr($right,0, $pos);
       // or cut at last space
       else if ($pos = strrpos($right, ' ')) $right = substr($right, 0, $pos).' …';
@@ -149,18 +152,18 @@ $db->sqliteCreateFunction('matchinfo2occ', 'Sqlite::matchinfo2occ', 1);
 $res = $db->prepare("SELECT matchinfo2occ(matchinfo(search, 'x')) AS occ , text FROM search  WHERE text MATCH ? ");
 $res->execute(array('"Felix the cat"'));
 
-« Felix the cat, Felix the cat » 
-the cat felix       = 6 
+« Felix the cat, Felix the cat »
+the cat felix       = 6
 "felix the cat"     = 2
-"felix the cat" the = 4 
+"felix the cat" the = 4
 
-  matchinfo(?, 'x') 
+  matchinfo(?, 'x')
   32-bit unsigned integers in machine byte-order
   3 * cols * phrases
-  1) In the current row, the number of times the phrase appears in the column. 
-  2) The total number of times the phrase appears in the column in all rows in the FTS table. 
+  1) In the current row, the number of times the phrase appears in the column.
+  2) The total number of times the phrase appears in the column in all rows in the FTS table.
   3) The total number of rows in the FTS table for which the column contains at least one instance of the phrase.
-  */  
+  */
   static function matchinfo2occ($matchinfo)
   {
     $ints = unpack('L*', $matchinfo);
@@ -174,24 +177,24 @@ the cat felix       = 6
   /**
   Infer occurrences count from an offsets() result
   A bit faster than matchinfo, available in sqlite 3.6.20 (CentOS6)
-  but less precise for phrase query, 
+  but less precise for phrase query,
 
 $db->sqliteCreateFunction('offsets2occ', 'Sqlite::offsets2occ', 1);
 $res = $db->prepare("SELECT offsets2occ(offsets(search))AS occ , text FROM search  WHERE text MATCH ? ");
 $res->execute(array('"Felix the cat"'));
 
 « Felix the cat, Felix the cat »
-  felix the cat       = 6 
-  "felix the cat"     = 6  
-  "felix the cat" the = 8   
+  felix the cat       = 6
+  "felix the cat"     = 6
+  "felix the cat" the = 8
 
 space-separated integers, 4 for each term in text
 
-0   The column number that the term instance occurs in (0 for the leftmost column of the FTS table, 1 for the next leftmost, etc.). 
-1   The term number of the matching term within the full-text query expression. Terms within a query expression are numbered starting from 0 in the order that they occur. 
-2   The byte offset of the matching term within the column. 
+0   The column number that the term instance occurs in (0 for the leftmost column of the FTS table, 1 for the next leftmost, etc.).
+1   The term number of the matching term within the full-text query expression. Terms within a query expression are numbered starting from 0 in the order that they occur.
+2   The byte offset of the matching term within the column.
 3   The size of the matching term in bytes.
-  */ 
+  */
   static function offsets2occ($offsets)
   {
     $occ = (1+substr_count($offsets, ' '))/4 ;
@@ -206,7 +209,7 @@ space-separated integers, 4 for each term in text
     return $offsets;
   }
   /**
-   * Sample code base to test the last implemented function, 
+   * Sample code base to test the last implemented function,
    * see doc of each function for other code samples
    */
   static function doCli()
@@ -228,8 +231,8 @@ space-separated integers, 4 for each term in text
     while($row = $res->fetch(PDO::FETCH_ASSOC)) {
       echo $row['occ'].' '.$row['text']."\n";
       echo preg_replace(
-        array('/(\d+ \d+ \d+ \d+)/'), 
-        array("\n".'$1'), 
+        array('/(\d+ \d+ \d+ \d+)/'),
+        array("\n".'$1'),
         $row['offsets']
       );
     }
